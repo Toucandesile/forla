@@ -6,3 +6,6 @@ playwright-report
 *.local
 .DS_Store
 node_modules
+sync-server/node_modules
+sync-server/.wrangler
+.vscode/

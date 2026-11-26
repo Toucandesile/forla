@@ -1,0 +1,10 @@
+# Relais de synchronisation Forla — Cloudflare Worker + base D1
+name = "forla-sync"
+main = "src/index.js"
+compatibility_date = "2025-09-01"
+workers_dev = true
+
+[[d1_databases]]
+binding = "DB"
+database_name = "forla-sync"
+database_id = "61c0ef4d-e5d8-4639-9b56-50c16ba78b2b"

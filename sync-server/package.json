@@ -1,0 +1,14 @@
+{
+  "name": "forla-sync",
+  "private": true,
+  "version": "1.0.0",
+  "description": "Relais de synchronisation chiffrée de bout en bout pour Forla (Cloudflare Worker + D1)",
+  "type": "module",
+  "scripts": {
+    "deploy": "wrangler deploy",
+    "dev": "wrangler dev"
+  },
+  "devDependencies": {
+    "wrangler": "^4.168.0"
+  }
+}

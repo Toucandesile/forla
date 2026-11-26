@@ -43,6 +43,8 @@ import { matchRule } from '../lib/importers';
 import { canInstall, isIOS, isStandalone, onInstallChange, promptInstall } from '../lib/install';
 import { Button, Card, Field, PageHeader, Segmented, Sheet, Switch, cn } from '../components/ui';
 import { ImportWizard } from '../components/ImportWizard';
+import { SyncPanel } from '../components/SyncPanel';
+import { disableSync } from '../lib/sync';
 
 const CURRENCIES = [
   ['EUR', 'Euro (€)'],
@@ -77,6 +79,7 @@ export default function SettingsPage() {
       <PageHeader title="Réglages" subtitle="Vos données restent sur cet appareil. Rien n’est envoyé sur Internet." />
       <div className="mb-5 flex flex-wrap gap-2 text-sm">
         {[
+          ['#sync', 'Synchronisation'],
           ['#import', 'Importer'],
           ['#sauvegarde', 'Sauvegarde'],
           ['#categories', 'Catégories'],
@@ -117,6 +120,10 @@ export default function SettingsPage() {
                 </select>
               </Field>
             </div>
+          </Section>
+
+          <Section id="sync" title="Synchronisation entre appareils" description="Partagez le même foyer sur plusieurs téléphones (couple, colocation), automatiquement.">
+            <SyncPanel />
           </Section>
 
           <Section id="import" title="Importer un relevé bancaire" description="CSV, OFX ou QIF depuis votre banque. Catégorisation automatique et détection des doublons.">
@@ -241,13 +248,8 @@ function BackupSection() {
   return (
     <Section
       id="sauvegarde"
-      title="Sauvegarde & synchronisation"
-      description={
-        <>
-          Exportez régulièrement vos données. Pour utiliser Forla à plusieurs appareils, envoyez la sauvegarde à l’autre appareil et choisissez «
-          Fusionner » : les modifications des deux côtés sont combinées.
-        </>
-      }
+      title="Sauvegarde"
+      description="Exportez régulièrement vos données en lieu sûr. « Fusionner » permet aussi d’échanger des données entre appareils sans synchronisation automatique."
     >
       <p className="mb-3 text-sm">
         Dernière sauvegarde :{' '}
@@ -812,6 +814,7 @@ function DangerSection() {
               disabled={text !== 'EFFACER'}
               onClick={async () => {
                 await wipeAll();
+                await disableSync();
                 setConfirm(false);
                 toast('Données effacées');
               }}
@@ -823,6 +826,7 @@ function DangerSection() {
               disabled={text !== 'EFFACER'}
               onClick={async () => {
                 await wipeAll();
+                await disableSync();
                 await seedDemo();
                 setConfirm(false);
                 toast.success('Démo chargée');

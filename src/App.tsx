@@ -25,6 +25,9 @@ import { processRecurring } from './lib/recurring';
 import { LockScreen } from './pages/LockScreen';
 import { Onboarding } from './pages/Onboarding';
 import Dashboard from './pages/Dashboard';
+import { JoinPage } from './pages/Join';
+import { syncNow, useSyncState } from './lib/sync';
+import { SyncStatusIcon, syncLabel } from './components/SyncPanel';
 
 const Transactions = lazy(() => import('./pages/Transactions'));
 const BudgetPage = lazy(() => import('./pages/Budget'));
@@ -63,8 +66,10 @@ export default function App() {
   const [locked, setLocked] = useState(() => !!prefs.pinHash);
   const [moreOpen, setMoreOpen] = useState(false);
   const online = useOnline();
+  const sync = useSyncState();
   useApplyTheme(prefs.theme);
   usePwaUpdates();
+  useAutoSync(sync.phase !== 'off' && !locked);
 
   // Opérations récurrentes automatiques : au démarrage et au retour sur l'appli
   useEffect(() => {
@@ -116,6 +121,7 @@ export default function App() {
 
   if (!data.ready) return <Splash />;
   if (locked && prefs.pinHash) return <LockScreen onUnlock={() => setLocked(false)} />;
+  if (route.segments[0] === 'rejoindre') return <JoinPage code={route.query.get('c')} />;
   if (!data.settings.onboarded) return <Onboarding />;
 
   const current = '/' + (route.segments[0] ?? '');
@@ -168,10 +174,17 @@ export default function App() {
             ))}
           </nav>
           <div className="mt-4 flex items-center justify-between gap-2 px-2 text-xs text-muted">
-            <span className="flex items-center gap-1.5">
-              {online ? <span className="h-2 w-2 rounded-full bg-good" /> : <WifiOff size={14} />}
-              {online ? 'Données sur cet appareil' : 'Hors ligne — tout fonctionne'}
-            </span>
+            {sync.phase !== 'off' ? (
+              <a href="#/reglages" className="flex min-w-0 items-center gap-1.5 hover:text-ink" title={syncLabel(sync)}>
+                <SyncStatusIcon state={sync} size={14} />
+                <span className="truncate">{sync.phase === 'idle' ? 'Synchronisé' : syncLabel(sync)}</span>
+              </a>
+            ) : (
+              <span className="flex items-center gap-1.5">
+                {online ? <span className="h-2 w-2 rounded-full bg-good" /> : <WifiOff size={14} />}
+                {online ? 'Données sur cet appareil' : 'Hors ligne — tout fonctionne'}
+              </span>
+            )}
             <span className="flex">
               <IconButton
                 label={prefs.hideAmounts ? 'Afficher les montants' : 'Masquer les montants'}
@@ -197,6 +210,11 @@ export default function App() {
               <span className="font-bold">Forla</span>
             </a>
             <div className="flex items-center">
+              {sync.phase !== 'off' && (
+                <a href="#/reglages" className="flex h-10 w-10 items-center justify-center" aria-label={syncLabel(sync)} title={syncLabel(sync)}>
+                  <SyncStatusIcon state={sync} size={18} />
+                </a>
+              )}
               {!online && (
                 <span className="mr-1 flex items-center gap-1 rounded-full bg-surface-2 px-2 py-0.5 text-xs text-muted">
                   <WifiOff size={12} /> Hors ligne
@@ -308,6 +326,35 @@ function Splash() {
       <img src="./logo.svg" alt="Forla" className="h-16 w-16 animate-pulse" />
     </div>
   );
+}
+
+/** Synchronisation automatique : au démarrage, au retour sur l'appli, toutes les 20 s et après chaque changement local. */
+function useAutoSync(enabled: boolean) {
+  const data = useData();
+  useEffect(() => {
+    if (!enabled) return;
+    const run = () => {
+      syncNow().catch(() => {});
+    };
+    run();
+    const onVis = () => document.visibilityState === 'visible' && run();
+    document.addEventListener('visibilitychange', onVis);
+    window.addEventListener('online', run);
+    const id = setInterval(() => document.visibilityState === 'visible' && run(), 20_000);
+    return () => {
+      document.removeEventListener('visibilitychange', onVis);
+      window.removeEventListener('online', run);
+      clearInterval(id);
+    };
+  }, [enabled]);
+  const { transactions, accounts, categories, groups, budgets, recurring, members, goals, contributions, settlements, rules, settings } = data;
+  useEffect(() => {
+    if (!enabled) return;
+    const id = setTimeout(() => {
+      syncNow().catch(() => {});
+    }, 1200);
+    return () => clearTimeout(id);
+  }, [enabled, transactions, accounts, categories, groups, budgets, recurring, members, goals, contributions, settlements, rules, settings]);
 }
 
 function useOnline() {

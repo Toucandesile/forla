@@ -7,6 +7,7 @@ import { ACCOUNT_TYPES, type AccountType } from '../db/schema';
 import { wipeAll } from '../lib/backup';
 import { parseAmount } from '../lib/money';
 import { AmountInput, Button, Field } from '../components/ui';
+import { JoinPrompt } from '../components/SyncPanel';
 
 const EMOJIS = ['🦊', '🐻', '🐼', '🦁', '🐨', '🐯', '🐸', '🦉', '🐙', '🦄'];
 
@@ -18,6 +19,7 @@ export function Onboarding() {
   const [accountName, setAccountName] = useState('Compte courant');
   const [accountType, setAccountType] = useState<AccountType>('checking');
   const [balance, setBalance] = useState('');
+  const [joinOpen, setJoinOpen] = useState(false);
 
   async function startDemo() {
     setBusy(true);
@@ -97,6 +99,10 @@ export function Onboarding() {
                 Essayer la démo
               </Button>
             </div>
+            <button type="button" className="w-full text-center text-sm font-medium text-primary hover:underline" onClick={() => setJoinOpen(true)}>
+              J’ai reçu une invitation pour rejoindre un foyer
+            </button>
+            <JoinPrompt open={joinOpen} onClose={() => setJoinOpen(false)} />
           </div>
         )}
 

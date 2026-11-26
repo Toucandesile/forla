@@ -29,6 +29,8 @@ export class ForlaDB extends Dexie {
   receipts!: Table<TableTypes['receipts'], string>;
   settings!: Table<Setting, string>;
   tombstones!: Table<Tombstone, string>;
+  /** Dernière version de chaque enregistrement échangée avec le relais de synchronisation */
+  syncmeta!: Table<{ key: string; u: number }, string>;
 
   constructor(name = 'forla') {
     super(name);
@@ -48,6 +50,7 @@ export class ForlaDB extends Dexie {
       settings: 'key',
       tombstones: 'id, table',
     });
+    this.version(2).stores({ syncmeta: 'key' });
   }
 }
 

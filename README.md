@@ -44,13 +44,40 @@ GitHub Pages publie la branche `gh-pages` en une à deux minutes. Les appareils 
 | **Analyses** | Revenus/dépenses par mois, dépenses par catégorie, règle 50/30/20, principaux bénéficiaires, taux d'épargne |
 | **Import** | Relevés **CSV, OFX, QIF** de toutes les banques françaises, nettoyage des libellés, détection des doublons |
 | **Sécurité** | Code PIN, mode discret (montants floutés), sauvegardes chiffrées AES-256 |
-| **Synchronisation** | Export/partage de la sauvegarde puis **fusion** sur l'autre appareil (la version la plus récente de chaque élément gagne, suppressions comprises) |
+| **Synchronisation** | **Automatique entre les téléphones d'un foyer**, chiffrée de bout en bout : invitation par QR code ou lien, fonctionne hors ligne et se rattrape au retour du réseau. Sans synchro, échange possible par fichier de sauvegarde (« Fusionner ») |
+
+## Synchronisation entre appareils
+
+1. Sur un premier téléphone : Réglages → Synchronisation → **Activer et inviter un appareil** (un QR code s'affiche).
+2. Sur l'autre téléphone : scanner le QR code avec l'appareil photo (ou ouvrir le lien reçu) → **Rejoindre le foyer**.
+
+Ensuite tout est automatique (au démarrage, au retour sur l'appli, toutes les 20 s et juste après chaque modification).
+
+**Sécurité** : le lien contient un secret de 128 bits placé après le `#`, donc jamais transmis à un serveur.
+Chaque appareil en dérive (HKDF) l'identifiant du foyer, un jeton d'accès, une clé AES-256-GCM et une clé HMAC.
+Le relais ne stocke que des empreintes opaques, des horodatages et des données chiffrées. Les conflits sont résolus
+par « dernière modification gagne », suppressions comprises. Les photos de tickets ne sont pas synchronisées.
+
+### Relais (`sync-server/`)
+
+Cloudflare Worker + base D1 (offre gratuite), environ 100 lignes : `POST /v1/pull` et `POST /v1/push`.
+
+```bash
+cd sync-server
+npm install
+npx wrangler login                                                 # une fois
+npx wrangler d1 execute forla-sync --remote --file=schema.sql      # création des tables (une fois)
+npx wrangler deploy                                                # publication
+```
+
+L'adresse du relais est définie dans `.env` (`VITE_SYNC_URL`) et intégrée à l'application au moment du build.
 
 ## Tests
 
 ```bash
 npm test          # tests unitaires (calculs, partage, import, fusion, chiffrement)
-npm run test:e2e  # parcours complets dans Chromium (ordinateur + mobile, dont mode hors ligne)
+npm run test:e2e  # parcours complets dans Chromium : ordinateur + mobile, hors ligne, synchronisation à deux appareils
+BASE_URL=https://toucandesile.github.io/forla/ npm run test:e2e   # mêmes tests sur la version en ligne
 ```
 
 ## Architecture
