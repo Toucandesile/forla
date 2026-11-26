@@ -46,6 +46,9 @@ export default defineConfig({
         globPatterns: ['**/*.{js,css,html,svg,png,ico,webmanifest,woff2}'],
         navigateFallback: 'index.html',
         cleanupOutdatedCaches: true,
+        // Dès la première visite, le service worker prend la main sur la page :
+        // l'appli fonctionne hors ligne sans avoir besoin d'être rechargée.
+        clientsClaim: true,
       },
       devOptions: { enabled: false },
     }),
